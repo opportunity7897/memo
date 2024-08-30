@@ -1,0 +1,45 @@
+PYTHON
+from flask import Flask, Response, jsonify
+import time
+
+app = Flask(__name__)
+
+def generate_images(image_count):
+    for i in range(image_count):
+        # ここで画像を取得または生成する処理を行う
+        image_url = f"http://example.com/image{i}.jpg"  # 例: 取得した画像のURL
+        yield f"data:{image_url}\n\n"  # サーバーイベントでデータを送信
+        time.sleep(2)  # 画像間のインターバル（2秒）
+
+@app.route('/get-images/<int:image_count>', methods=['GET'])
+def get_images(image_count):
+    return Response(generate_images(image_count), content_type='text/event-stream')
+
+if __name__ == '__main__':
+    app.run(port=5000)
+
+
+JAVASCRIPT
+function getImagesAndInsert(imageCount) {
+    const eventSource = new EventSource(`http://localhost:5000/get-images/${imageCount}`);
+
+    eventSource.onmessage = function(event) {
+        const imageUrl = event.data;
+        insertImageIntoHTML(imageUrl); // 取得した画像をHTMLに挿入する処理
+    };
+
+    eventSource.onerror = function() {
+        console.error("Failed to get images");
+        eventSource.close();
+    };
+}
+
+function insertImageIntoHTML(imageUrl) {
+    // 取得した画像URLをHTMLに挿入する関数
+    const img = document.createElement('img');
+    img.src = imageUrl;
+    document.body.appendChild(img);
+}
+
+// 関数を実行（例として5枚の画像を取得）
+getImagesAndInsert(5);
